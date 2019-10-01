@@ -24,13 +24,10 @@ export function getInterview(state, interview) {
           "name": state.interviewers[key].name,
           "avatar": state.interviewers[key].avatar
         }
-
       }
     }
-
   }
   return interviewObject;
-
 }
 
 export default { getAppointmentsForDay, getInterview }
