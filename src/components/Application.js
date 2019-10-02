@@ -40,7 +40,6 @@ export default function Application(props) {
       [id]: appointment
     };
 
-
     return axios({
       method: 'PUT',
       url: `/api/appointments/${appointment.id}`,
@@ -48,6 +47,20 @@ export default function Application(props) {
     }).then(setState({ ...state, appointments }));
   }
 
+  function cancelInterview(id) {
+    const appointment = {
+      ...state.appointments[id],
+      interview: { interview: null }
+    };
+    const appointments = {
+      ...state.appointments,
+      [id]: appointment
+    };
+    return axios({
+      method: 'DELETE',
+      url: `/api/appointments/${appointment.id}`,
+    }).then(setState({ ...state, appointments }));
+  }
 
   const appointments = getAppointmentsForDay(state, state.day);
   const schedule = appointments.map((appointment) => {
@@ -63,6 +76,7 @@ export default function Application(props) {
         interview={interview}
         interviewers={interviewers}
         bookInterview={bookInterview}
+        cancelInterview={cancelInterview}
       />
     );
   });
