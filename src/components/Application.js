@@ -23,9 +23,7 @@ export default function Application(props) {
       (axios.get("/api/appointments")),
       (axios.get("/api/interviewers"))
     ]).then((all) => {
-
       setState(prev => ({ days: all[0].data, appointments: all[1].data, interviewers: all[2].data, day: "Monday" }));
-
     });
 
   }, []);
@@ -44,7 +42,7 @@ export default function Application(props) {
       method: 'PUT',
       url: `/api/appointments/${appointment.id}`,
       data: { interview }
-    }).then(setState({ ...state, appointments }));
+    }).then(() => setState({ ...state, appointments }));
   }
 
   function cancelInterview(id) {
@@ -59,26 +57,10 @@ export default function Application(props) {
     return axios({
       method: 'DELETE',
       url: `/api/appointments/${appointment.id}`,
-    }).then(setState({ ...state, appointments }));
+    })
+      .then(() => setState({ ...state, appointments }));
+    // .catch((error) => console.log('meep', error));
   }
-
-  // function editInterview(id, interview) {
-  //   const appointment = {
-  //     ...state.appointments[id],
-  //     interview: { ...interview }
-  //   };
-  //   const appointments = {
-  //     ...state.appointments,
-  //     [id]: appointment
-  //   };
-
-  //   return axios({
-  //     method: 'PUT',
-  //     url: `/api/appointments/${appointment.id}`,
-  //     data: { interview }
-  //   }).then(setState({ ...state, appointments }));
-
-  // }
 
   const appointments = getAppointmentsForDay(state, state.day);
   const schedule = appointments.map((appointment) => {
@@ -95,7 +77,6 @@ export default function Application(props) {
         interviewers={interviewers}
         bookInterview={bookInterview}
         cancelInterview={cancelInterview}
-      // editInterview={editInterview}
       />
     );
   });
