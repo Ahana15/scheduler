@@ -45,15 +45,25 @@ export default function useApplicationData() {
     appointments: {},
     interviewers: {}
   });
-  const getDayId = (interviewId) => {
+
+  const getDayIdAndSpots = (interviewId, appointments) => {
+    let ans = { dayID: null, spotsRemaining: 0 };
     for (let day of state.days) {
       for (let appointment of day.appointments) {
         if (interviewId === appointment) {
-          return day.id - 1;
+          ans.dayID = day.id - 1;
+          let dayKey = ans.dayID;
+          for (let appointment of state.days[dayKey].appointments) {
+            if (appointments[appointment].interview === null) {
+              ans.spotsRemaining++;
+            }
+          }
         }
       }
     }
+    return ans;
   }
+
 
   const setDay = day => dispatch({ type: SET_DAY, value: day })
 
@@ -73,6 +83,7 @@ export default function useApplicationData() {
     exampleSocket.onopen = function (event) {
       exampleSocket.onmessage = function (event) {
         if (state.days.length > 0) {
+          console.log(state);
           let data = JSON.parse(event.data)
           if (data.type === "SET_INTERVIEW") {
             if (data.interview === null) {
@@ -86,8 +97,8 @@ export default function useApplicationData() {
               };
               dispatch({ type: SET_INTERVIEW, appointments });
               let days = updateObjectInArray(state.days, {
-                index: getDayId(data.id),
-                item: state.days[getDayId(data.id)].spots + 1
+                index: getDayIdAndSpots(data.id, appointments).dayID,
+                item: getDayIdAndSpots(data.id, appointments).spotsRemaining
               });
               dispatch({ type: SET_REMAININGSPOTS, days })
             } else {
@@ -101,8 +112,8 @@ export default function useApplicationData() {
               };
               dispatch({ type: SET_INTERVIEW, appointments });
               let days = updateObjectInArray(state.days, {
-                index: getDayId(data.id),
-                item: state.days[getDayId(data.id)].spots - 1
+                index: getDayIdAndSpots(data.id, appointments).dayID,
+                item: getDayIdAndSpots(data.id, appointments).spotsRemaining
               });
               dispatch({ type: SET_REMAININGSPOTS, days })
             }
@@ -124,16 +135,20 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
-    let days = updateObjectInArray(state.days, {
-      index: getDayId(id),
-      item: state.days[getDayId(id)].spots - 1
-    });
+
+
     return axios({
       method: 'PUT',
       url: `/api/appointments/${appointment.id}`,
       data: { interview }
     }).then(() => dispatch({ type: SET_INTERVIEW, appointments }))
-      .then(() => dispatch({ type: SET_REMAININGSPOTS, days }));
+      .then(() => {
+        let days = updateObjectInArray(state.days, {
+          index: getDayIdAndSpots(id, appointments).dayID,
+          item: getDayIdAndSpots(id, appointments).spotsRemaining
+        });
+        dispatch({ type: SET_REMAININGSPOTS, days });
+      });
   }
 
   function cancelInterview(id) {
@@ -145,15 +160,18 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
-    let days = updateObjectInArray(state.days, {
-      index: getDayId(id),
-      item: state.days[getDayId(id)].spots + 1
-    });
+
     return axios({
       method: 'DELETE',
       url: `/api/appointments/${appointment.id}`,
     }).then(() => dispatch({ type: SET_INTERVIEW, appointments }))
-      .then(() => dispatch({ type: SET_REMAININGSPOTS, days }));
+      .then(() => {
+        let days = updateObjectInArray(state.days, {
+          index: getDayIdAndSpots(id, appointments).dayID,
+          item: getDayIdAndSpots(id, appointments).spotsRemaining
+        });
+        dispatch({ type: SET_REMAININGSPOTS, days });
+      });
   }
   return { state, setDay, bookInterview, cancelInterview };
 }
