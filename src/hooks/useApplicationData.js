@@ -1,11 +1,31 @@
 
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer, useRef } from "react";
 import axios from "axios";
 
 const SET_DAY = "SET_DAY";
 const SET_APPLICATION_DATA = "SET_APPLICATION_DATA";
 const SET_INTERVIEW = "SET_INTERVIEW";
-const SET_DAYS = "SET_DAYS";
+const SET_REMAININGSPOTS = "SET_REMAININGSPOTS";
+
+const updateObjectInArray = (array, action) => {
+  return array.map((item, index) => {
+    if (index !== action.index) {
+      return item;
+    }
+    return {
+      ...item,
+      spots: action.item
+    };
+  });
+}
+
+const daysToID = {
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4
+}
 
 function reducer(state, action) {
   switch (action.type) {
@@ -16,7 +36,7 @@ function reducer(state, action) {
     case SET_INTERVIEW: {
       return { ...state, appointments: action.appointments }
     }
-    case SET_DAYS: {
+    case SET_REMAININGSPOTS: {
       return { ...state, days: action.days }
     }
     default:
@@ -33,6 +53,15 @@ export default function useApplicationData() {
     appointments: {},
     interviewers: {}
   });
+  const getDayId = (interviewId) => {
+    for (let day of state.days) {
+      for (let appointment of day.appointments) {
+        if (interviewId === appointment) {
+          return day.id - 1;
+        }
+      }
+    }
+  }
 
   const setDay = day => dispatch({ type: SET_DAY, value: day })
 
@@ -47,6 +76,56 @@ export default function useApplicationData() {
 
   }, []);
 
+  useEffect(() => {
+    const exampleSocket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
+    exampleSocket.onopen = function (event) {
+      exampleSocket.send("ping");
+      exampleSocket.onmessage = function (event) {
+        if (state.days.length > 0) {
+          console.log(state);
+          let data = JSON.parse(event.data)
+
+
+          if (data.type === "SET_INTERVIEW") {
+            console.log('data', data)
+            if (data.interview === null) {
+              const appointment = {
+                ...state.appointments[data.id],
+                interview: null
+              };
+              const appointments = {
+                ...state.appointments,
+                [data.id]: appointment
+              };
+              dispatch({ type: SET_INTERVIEW, appointments });
+              let days = updateObjectInArray(state.days, {
+                index: getDayId(data.id),
+                item: state.days[getDayId(data.id)].spots + 1
+              });
+
+              dispatch({ type: SET_REMAININGSPOTS, days })
+            } else {
+              const appointment = {
+                ...state.appointments[data.id],
+                interview: { ...data.interview }
+              };
+              const appointments = {
+                ...state.appointments,
+                [data.id]: appointment
+              };
+              dispatch({ type: SET_INTERVIEW, appointments });
+              let days = updateObjectInArray(state.days, {
+                index: getDayId(data.id),
+                item: state.days[getDayId(data.id)].spots - 1
+              });
+              dispatch({ type: SET_REMAININGSPOTS, days })
+            }
+          }
+        }
+      }
+    };
+  });
+
   function bookInterview(id, interview) {
     const appointment = {
       ...state.appointments[id],
@@ -56,35 +135,37 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
-
-
+    let days = updateObjectInArray(state.days, {
+      index: getDayId(id),
+      item: state.days[getDayId(id)].spots - 1
+    });
     return axios({
       method: 'PUT',
       url: `/api/appointments/${appointment.id}`,
       data: { interview }
     }).then(() => dispatch({ type: SET_INTERVIEW, appointments }))
-      .then(() => axios.get("/api/days"))
-      .then((res) => dispatch({ type: SET_DAYS, days: res.data }));
+      .then(() => dispatch({ type: SET_REMAININGSPOTS, days }));
   }
 
   function cancelInterview(id) {
     const appointment = {
       ...state.appointments[id],
-      interview: { interview: null }
+      interview: null
     };
     const appointments = {
       ...state.appointments,
       [id]: appointment
     };
-
+    let days = updateObjectInArray(state.days, {
+      index: getDayId(id),
+      item: state.days[getDayId(id)].spots + 1
+    });
     return axios({
       method: 'DELETE',
       url: `/api/appointments/${appointment.id}`,
     }).then(() => dispatch({ type: SET_INTERVIEW, appointments }))
-      .then(() => axios.get("/api/days"))
-      .then((res) => dispatch({ type: SET_DAYS, days: res.data }));
-
+      .then(() => dispatch({ type: SET_REMAININGSPOTS, days }));
   }
-  console.log(state.days);
+
   return { state, setDay, bookInterview, cancelInterview };
 }
