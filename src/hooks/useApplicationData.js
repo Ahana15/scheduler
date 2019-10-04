@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useReducer, useRef } from "react";
+import React, { useEffect, useReducer } from "react";
 import axios from "axios";
 
 const SET_DAY = "SET_DAY";
@@ -17,14 +17,6 @@ const updateObjectInArray = (array, action) => {
       spots: action.item
     };
   });
-}
-
-const daysToID = {
-  Monday: 0,
-  Tuesday: 1,
-  Wednesday: 2,
-  Thursday: 3,
-  Friday: 4
 }
 
 function reducer(state, action) {
@@ -79,15 +71,10 @@ export default function useApplicationData() {
   useEffect(() => {
     const exampleSocket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
     exampleSocket.onopen = function (event) {
-      exampleSocket.send("ping");
       exampleSocket.onmessage = function (event) {
         if (state.days.length > 0) {
-          console.log(state);
           let data = JSON.parse(event.data)
-
-
           if (data.type === "SET_INTERVIEW") {
-            console.log('data', data)
             if (data.interview === null) {
               const appointment = {
                 ...state.appointments[data.id],
@@ -102,7 +89,6 @@ export default function useApplicationData() {
                 index: getDayId(data.id),
                 item: state.days[getDayId(data.id)].spots + 1
               });
-
               dispatch({ type: SET_REMAININGSPOTS, days })
             } else {
               const appointment = {
@@ -124,6 +110,9 @@ export default function useApplicationData() {
         }
       }
     };
+    return () => {
+      exampleSocket.close();
+    }
   });
 
   function bookInterview(id, interview) {
@@ -166,6 +155,5 @@ export default function useApplicationData() {
     }).then(() => dispatch({ type: SET_INTERVIEW, appointments }))
       .then(() => dispatch({ type: SET_REMAININGSPOTS, days }));
   }
-
   return { state, setDay, bookInterview, cancelInterview };
 }
