@@ -86,37 +86,20 @@ export default function useApplicationData() {
           console.log(state);
           let data = JSON.parse(event.data)
           if (data.type === "SET_INTERVIEW") {
-            if (data.interview === null) {
-              const appointment = {
-                ...state.appointments[data.id],
-                interview: null
-              };
-              const appointments = {
-                ...state.appointments,
-                [data.id]: appointment
-              };
-              dispatch({ type: SET_INTERVIEW, appointments });
-              let days = updateObjectInArray(state.days, {
-                index: getDayIdAndSpots(data.id, appointments).dayID,
-                item: getDayIdAndSpots(data.id, appointments).spotsRemaining
-              });
-              dispatch({ type: SET_REMAININGSPOTS, days })
-            } else {
-              const appointment = {
-                ...state.appointments[data.id],
-                interview: { ...data.interview }
-              };
-              const appointments = {
-                ...state.appointments,
-                [data.id]: appointment
-              };
-              dispatch({ type: SET_INTERVIEW, appointments });
-              let days = updateObjectInArray(state.days, {
-                index: getDayIdAndSpots(data.id, appointments).dayID,
-                item: getDayIdAndSpots(data.id, appointments).spotsRemaining
-              });
-              dispatch({ type: SET_REMAININGSPOTS, days })
-            }
+            const appointment = {
+              ...state.appointments[data.id],
+              interview: data.interview ? { ...data.interview } : null
+            };
+            const appointments = {
+              ...state.appointments,
+              [data.id]: appointment
+            };
+            dispatch({ type: SET_INTERVIEW, appointments });
+            let days = updateObjectInArray(state.days, {
+              index: getDayIdAndSpots(data.id, appointments).dayID,
+              item: getDayIdAndSpots(data.id, appointments).spotsRemaining
+            });
+            dispatch({ type: SET_REMAININGSPOTS, days })
           }
         }
       }
