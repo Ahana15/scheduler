@@ -4,7 +4,7 @@ Interviews can be booked between Monday and Friday. A user can book an interview
 
 ### Application in Action
 
-![Application in action](https://github.com/Ahana15/tinyapp/blob/master/docs/usertest.gif?raw=true)
+![Application in action](https://github.com/Ahana15/scheduler/blob/master/interviewSchduler.gif?raw=true)
 
 ## Setup
 
