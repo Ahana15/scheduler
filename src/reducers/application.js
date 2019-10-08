@@ -2,7 +2,7 @@ const SET_DAY = "SET_DAY";
 const SET_APPLICATION_DATA = "SET_APPLICATION_DATA";
 const SET_INTERVIEW = "SET_INTERVIEW";
 
-const updateObjectInArray = (array, action) => {
+const updateSpotsInDay = (array, action) => {
   return array.map((item, index) => {
     if (index !== action.index) {
       return item;
@@ -56,7 +56,7 @@ const reducer = (state, action) => {
         ...state.appointments,
         [action.data.id]: appointment
       };
-      let days = updateObjectInArray(state.days, {
+      let days = updateSpotsInDay(state.days, {
         index: getDayIdAndSpotsRemaining(
           action.data.id,
           state.days,
