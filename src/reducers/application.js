@@ -14,6 +14,27 @@ const updateObjectInArray = (array, action) => {
   });
 };
 
+const getDayIdAndSpotsRemaining = (interviewId, days, appointments) => {
+  let updatedDay = { dayID: 0, spotsRemaining: 0 };
+  for (let day of days) {
+    let counterSpots = 0;
+    let appointmentFound = false;
+    for (let appointment of day.appointments) {
+      if (interviewId === appointment) {
+        updatedDay.dayID = day.id - 1;
+        appointmentFound = true;
+      }
+      if (appointments[appointment].interview === null) {
+        counterSpots++;
+      }
+    }
+    if (appointmentFound) {
+      updatedDay.spotsRemaining = counterSpots;
+    }
+  }
+  return updatedDay;
+};
+
 const reducer = (state, action) => {
   switch (action.type) {
     case SET_DAY:
@@ -27,23 +48,6 @@ const reducer = (state, action) => {
         interviewers: action.value.interviewers
       };
     case SET_INTERVIEW: {
-      const getDayIdAndSpotsRemaining = (interviewId, appointments) => {
-        let updatedDay = { dayID: null, spotsRemaining: 0 };
-        for (let day of state.days) {
-          for (let appointment of day.appointments) {
-            if (interviewId === appointment) {
-              updatedDay.dayID = day.id - 1;
-              let dayKey = updatedDay.dayID;
-              for (let appointment of state.days[dayKey].appointments) {
-                if (appointments[appointment].interview === null) {
-                  updatedDay.spotsRemaining++;
-                }
-              }
-            }
-          }
-        }
-        return updatedDay;
-      };
       const appointment = {
         ...state.appointments[action.data.id],
         interview: action.data.interview ? action.data.interview : null
@@ -53,9 +57,16 @@ const reducer = (state, action) => {
         [action.data.id]: appointment
       };
       let days = updateObjectInArray(state.days, {
-        index: getDayIdAndSpotsRemaining(action.data.id, appointments).dayID,
-        item: getDayIdAndSpotsRemaining(action.data.id, appointments)
-          .spotsRemaining
+        index: getDayIdAndSpotsRemaining(
+          action.data.id,
+          state.days,
+          appointments
+        ).dayID,
+        item: getDayIdAndSpotsRemaining(
+          action.data.id,
+          state.days,
+          appointments
+        ).spotsRemaining
       });
 
       return { ...state, appointments, days };
