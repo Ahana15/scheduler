@@ -37,8 +37,8 @@ const getDayIdAndSpotsRemaining = (interviewId, days, appointments) => {
 
 const reducer = (state, action) => {
   switch (action.type) {
-    // case SET_DAY:
-    //   return { ...state, day: action.value };
+    case SET_DAY:
+      return { ...state, day: action.value };
     case SET_APPLICATION_DATA:
       return {
         ...state,
